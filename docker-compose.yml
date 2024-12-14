@@ -1,10 +1,7 @@
 version: '3.8'
 services:
   backend:
-    build: 
-      context: ./cobrancas-server
-      dockerfile: Dockerfile
-    image: cobrancas-backend:latest
+    image: abdesignerpro/cobrancas-backend:latest
     deploy:
       replicas: 1
       labels:
@@ -24,10 +21,7 @@ services:
       - network_public
 
   frontend:
-    build:
-      context: ./cobrancas-app
-      dockerfile: Dockerfile
-    image: cobrancas-frontend:latest
+    image: abdesignerpro/cobrancas-frontend:latest
     deploy:
       replicas: 1
       labels:
