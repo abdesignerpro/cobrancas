@@ -1,0 +1,159 @@
+Executando verificação agendada de mensagens...
+Argumentos: [
+  'C:\\Users\\BARBO\\Downloads\\Cobrancas\\cobrancas-server\\node_modules\\ts-node\\dist\\bin.js',
+  'C:\\Users\\BARBO\\Downloads\\Cobrancas\\cobrancas-server\\src\\index.ts',
+  '--check-messages'
+]
+Diretório atual: C:\Users\BARBO\Downloads\Cobrancas\cobrancas-server
+Clientes carregados: [
+  {
+    id: '1734189772123',
+    name: 'Anderson Silva',
+    whatsapp: '5583994094835',
+    service: 'Manutenção de site',
+    value: 80,
+    billingDay: 15,
+    recurrence: 'monthly'
+  },
+  {
+    id: '1734193560317',
+    name: 'Anderson Barbosa',
+    whatsapp: '5583994094835',
+    service: 'Manutenção de site',
+    value: 100,
+    billingDay: 16,
+    recurrence: 'monthly'
+  },
+  {
+    id: '1734193560318',
+    name: 'Alan',
+    whatsapp: '5583994094835',
+    service: 'Manutenção de site',
+    value: 100,
+    billingDay: 14,
+    recurrence: 'monthly'
+  }
+]
+Configuração da API carregada: {
+  apiUrl: 'https://evolution.abdesignerpro.com.br',
+  instanceName: 'anderson',
+  apiKey: 'E62B2FC8FEB2-48A8-8AAC-38C637367B96',
+  pixName: 'AndersonBarbosa',
+  pixCity: 'CampinaGrande',
+  pixKey: '70408834498',
+  pixTxid: 'abdesignerpro',
+  pixKeyType: 'cpf'
+}
+
+Teste manual de datas:
+Data atual: 2024-12-14T17:18:19.535Z
+Dia de vencimento: 15
+Próximo vencimento: 2024-12-15T03:00:00.000Z
+Dias até o vencimento: 1
+Deve notificar? true
+
+=== Iniciando verificação de mensagens ===
+Configuração atual: {
+  enabled: true,
+  daysBeforeDue: '1',
+  messageTemplate: 'Olá {nome}! Lembrete de pagamento: R$ {valor} referente ao serviço de {servico}. Vencimento em {dias} dias.'
+}
+API Config: {
+  apiUrl: 'https://evolution.abdesignerpro.com.br',
+  instanceName: 'anderson',
+  apiKey: 'E62B2FC8FEB2-48A8-8AAC-38C637367B96',
+  pixName: 'AndersonBarbosa',
+  pixCity: 'CampinaGrande',
+  pixKey: '70408834498',
+  pixTxid: 'abdesignerpro',
+  pixKeyType: 'cpf'
+}
+
+Total de clientes: 3
+Data atual: 2024-12-14T17:18:19.537Z
+Dias antes do vencimento: 1
+
+Verificando cliente Anderson Silva:
+Data atual (raw): 2024-12-14T17:18:19.537Z
+Data atual (ajustada): 2024-12-14T03:00:00.000Z
+Dia atual: 14
+Dia de vencimento: 15
+Próximo vencimento: 2024-12-15T03:00:00.000Z
+Dias até o vencimento: 1
+Dias configurados para notificar antes: 1
+Deve notificar? true
+Motivo: Faltam exatamente 1 dias para o vencimento
+
+Cliente que será notificado: Anderson Silva
+Dia de cobrança: 15
+Recorrência: monthly
+Última cobrança: undefined
+
+Verificando cliente Anderson Barbosa:
+Data atual (raw): 2024-12-14T17:18:19.538Z
+Data atual (ajustada): 2024-12-14T03:00:00.000Z
+Dia atual: 14
+Dia de vencimento: 16
+Próximo vencimento: 2024-12-16T03:00:00.000Z
+Dias até o vencimento: 2
+Dias configurados para notificar antes: 1
+Deve notificar? false
+Motivo: Não é o dia do vencimento nem faltam 1 dias para o vencimento
+
+Verificando cliente Alan:
+Data atual (raw): 2024-12-14T17:18:19.538Z
+Data atual (ajustada): 2024-12-14T03:00:00.000Z
+Dia atual: 14
+Dia de vencimento: 14
+É o dia do vencimento!
+
+Cliente que será notificado: Alan
+Dia de cobrança: 14
+Recorrência: monthly
+Última cobrança: undefined
+Clientes filtrados para notificação: [
+  {
+    id: '1734189772123',
+    name: 'Anderson Silva',
+    whatsapp: '5583994094835',
+    service: 'Manutenção de site',
+    value: 80,
+    billingDay: 15,
+    recurrence: 'monthly'
+  },
+  {
+    id: '1734193560318',
+    name: 'Alan',
+    whatsapp: '5583994094835',
+    service: 'Manutenção de site',
+    value: 100,
+    billingDay: 14,
+    recurrence: 'monthly'
+  }
+]
+
+Clientes para notificar: [
+  {
+    id: '1734189772123',
+    name: 'Anderson Silva',
+    whatsapp: '5583994094835',
+    service: 'Manutenção de site',
+    value: 80,
+    billingDay: 15,
+    recurrence: 'monthly'
+  },
+  {
+    id: '1734193560318',
+    name: 'Alan',
+    whatsapp: '5583994094835',
+    service: 'Manutenção de site',
+    value: 100,
+    billingDay: 14,
+    recurrence: 'monthly'
+  }
+]
+
+=== Mensagem enviada com sucesso para Anderson Silva ===
+
+=== Mensagem enviada com sucesso para Alan ===
+Verificação concluída com sucesso

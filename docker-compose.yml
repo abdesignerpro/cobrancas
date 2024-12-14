@@ -1,0 +1,54 @@
+version: '3.8'
+services:
+  backend:
+    build: 
+      context: ./cobrancas-server
+      dockerfile: Dockerfile
+    image: cobrancas-backend:latest
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.cobrancas-backend.rule=Host(`api.cobrancas.abdesignerpro.com.br`)"
+        - "traefik.http.routers.cobrancas-backend.entrypoints=websecure"
+        - "traefik.http.routers.cobrancas-backend.tls=true"
+        - "traefik.http.routers.cobrancas-backend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.cobrancas-backend.loadbalancer.server.port=3001"
+        - "traefik.docker.network=network_public"
+    environment:
+      - NODE_ENV=production
+      - TZ=America/Sao_Paulo
+    volumes:
+      - vol_shared:/app/data
+    networks:
+      - network_public
+
+  frontend:
+    build:
+      context: ./cobrancas-app
+      dockerfile: Dockerfile
+    image: cobrancas-frontend:latest
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.cobrancas-frontend.rule=Host(`cobrancas.abdesignerpro.com.br`)"
+        - "traefik.http.routers.cobrancas-frontend.entrypoints=websecure"
+        - "traefik.http.routers.cobrancas-frontend.tls=true"
+        - "traefik.http.routers.cobrancas-frontend.tls.certresolver=letsencryptresolver"
+        - "traefik.http.services.cobrancas-frontend.loadbalancer.server.port=80"
+        - "traefik.docker.network=network_public"
+    depends_on:
+      - backend
+    networks:
+      - network_public
+
+volumes:
+  vol_shared:
+    external: true
+    name: volume_swarm_shared
+
+networks:
+  network_public:
+    external: true
+    name: network_public

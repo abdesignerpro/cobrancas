@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "daysBeforeDue": "1",
+  "sendTime": "14:18",
+  "messageTemplate": "Olá {nome}! 👋\n\nEsperamos que esteja bem!\n\n📋 *Detalhes do Serviço*\n○ Serviço: {servico}\n○ Valor: R$ {valor}\n○ Vencimento: {dias}\n\n💳 *Opções de Pagamento*\nPara sua comodidade, disponibilizamos o pagamento via PIX:"
+}
