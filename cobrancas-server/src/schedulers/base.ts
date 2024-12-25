@@ -17,22 +17,27 @@ export abstract class BaseScheduler {
 
   protected async loadConfig() {
     try {
-      const config = BaseScheduler.inMemoryStorage['automaticSendingConfig'];
-      this.config = config ? JSON.parse(config) : {
+      // Tenta carregar do arquivo primeiro
+      const configPath = require('path').resolve(__dirname, '../../data/config.json');
+      const configData = require('fs').readFileSync(configPath, 'utf8');
+      this.config = JSON.parse(configData);
+      
+      // Atualiza o storage em memória
+      BaseScheduler.inMemoryStorage['automaticSendingConfig'] = configData;
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+      // Fallback para configuração padrão
+      this.config = {
         enabled: true,
         daysBeforeDue: "1",
         messageTemplate: "Olá {nome}! Lembrete de pagamento: R$ {valor} referente ao serviço de {servico}. Vencimento em {dias} dias."
       };
-    } catch (error) {
-      console.error('Erro ao carregar configurações:', error);
     }
   }
 
   protected async checkAndSendMessages() {
-    if (!this.config?.enabled) {
-      console.log('Envio automático está desabilitado');
-      return;
-    }
+    // Recarrega a configuração antes de verificar
+    await this.loadConfig();
 
     try {
       console.log('\n=== Iniciando verificação de mensagens ===');
@@ -58,35 +63,42 @@ export abstract class BaseScheduler {
   }
 
   protected async getClientsToNotify() {
-    const clients = BaseScheduler.inMemoryStorage['clients'];
-    if (!clients) {
-      console.log('Nenhum cliente encontrado no armazenamento');
+    try {
+      // Sempre carrega os clientes do arquivo
+      const clientsPath = require('path').resolve(__dirname, '../../data/clients.json');
+      const clientsData = require('fs').readFileSync(clientsPath, 'utf8');
+      const clientList = JSON.parse(clientsData);
+      
+      // Atualiza a memória com os dados do arquivo
+      BaseScheduler.inMemoryStorage['clients'] = JSON.stringify(clientList);
+
+      console.log('\nTotal de clientes:', clientList.length);
+      console.log('Data atual:', new Date().toISOString());
+      console.log('Dias antes do vencimento:', this.config.daysBeforeDue);
+
+      const toNotify = clientList.filter((client: any) => {
+        const shouldNotify = this.shouldNotifyClient(client);
+        if (shouldNotify) {
+          console.log('\nCliente que será notificado:', client.name);
+          console.log('Dia de cobrança:', client.billingDay);
+          console.log('Recorrência:', client.recurrence);
+          console.log('Última cobrança:', client.lastBillingDate);
+        }
+        return shouldNotify;
+      });
+      
+      console.log('Clientes filtrados para notificação:', toNotify);
+      return toNotify;
+    } catch (error) {
+      console.error('Erro ao carregar clientes:', error);
       return [];
     }
-
-    const clientList = JSON.parse(clients);
-    console.log('\nTotal de clientes:', clientList.length);
-    console.log('Data atual:', new Date().toISOString());
-    console.log('Dias antes do vencimento:', this.config.daysBeforeDue);
-
-    const toNotify = clientList.filter((client: any) => {
-      const shouldNotify = this.shouldNotifyClient(client);
-      if (shouldNotify) {
-        console.log('\nCliente que será notificado:', client.name);
-        console.log('Dia de cobrança:', client.billingDay);
-        console.log('Recorrência:', client.recurrence);
-        console.log('Última cobrança:', client.lastBillingDate);
-      }
-      return shouldNotify;
-    });
-    
-    console.log('Clientes filtrados para notificação:', toNotify);
-    return toNotify;
   }
 
   protected shouldNotifyClient(client: any): boolean {
     const config = JSON.parse(BaseScheduler.inMemoryStorage['automaticSendingConfig'] || '{}');
     const daysBeforeDue = config.daysBeforeDue || '1';
+    const enabled = config.enabled;
     
     const today = new Date();
     const billingDay = client.billingDay;
@@ -99,11 +111,19 @@ export abstract class BaseScheduler {
     console.log('Data atual (ajustada):', todayStart.toISOString());
     console.log('Dia atual:', todayStart.getDate());
     console.log('Dia de vencimento:', billingDay);
+    console.log('Envio automático ativado:', enabled);
     
     // Primeiro verifica se é o dia do vencimento
+    // Notificações no dia do vencimento são enviadas mesmo com envio automático desativado
     if (todayStart.getDate() === billingDay) {
-      console.log('É o dia do vencimento!');
+      console.log('É o dia do vencimento! Enviando independente do status de ativação.');
       return true;
+    }
+    
+    // Se o envio automático estiver desativado e não for o dia do vencimento, não notifica
+    if (!enabled) {
+      console.log('Envio automático desativado e não é dia do vencimento. Não notificar.');
+      return false;
     }
     
     // Calcula a próxima data de vencimento
@@ -246,6 +266,10 @@ export abstract class BaseScheduler {
         c.id === client.id ? updatedClient : c
       );
       BaseScheduler.inMemoryStorage['clients'] = JSON.stringify(updatedClients);
+
+      // Salva em disco também
+      const clientsPath = require('path').resolve(__dirname, '../../data/clients.json');
+      require('fs').writeFileSync(clientsPath, JSON.stringify(updatedClients, null, 2));
 
       console.log(`\n=== Mensagem enviada com sucesso para ${client.name} ===`);
     } catch (error) {

@@ -1,223 +1,355 @@
 import express from 'express';
-import { LocalScheduler } from './schedulers/local';
-import { ServerScheduler } from './schedulers/server';
-import { BaseScheduler } from './schedulers/base';
-import path from 'path';
-import fetch from 'node-fetch';
-import fs from 'fs';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import cron from 'node-cron';
+import initializeDatabase from './database/init';
+import Charge from './database/models/Charge';
+import Config from './database/models/Config';
+import axios from 'axios';
+
+// Carrega variáveis de ambiente
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001; // Porta correta do servidor
+const PORT = process.env.PORT || 3000;
 
-// Configuração do CORS
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
-
+// Middleware
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
-// Determina qual scheduler usar baseado no ambiente
-const isProduction = process.env.NODE_ENV === 'production';
-const scheduler = isProduction ? new ServerScheduler() : new LocalScheduler();
-
-// Configuração para servir arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, '../../cobrancas-app/build')));
-
-// Carrega configurações iniciais apenas se não existir
-const defaultConfig = {
-  enabled: true,
-  daysBeforeDue: "1",
-  sendTime: "13:27",
-  messageTemplate: "Olá {nome}! 👋\n\nEsperamos que esteja bem!\n\n📋 *Detalhes do Serviço*\n○ Serviço: {servico}\n○ Valor: R$ {valor}\n○ Vencimento: {dias}\n\n💳 *Opções de Pagamento*\nPara sua comodidade, disponibilizamos o pagamento via PIX:"
-};
-
-if (!BaseScheduler.inMemoryStorage['automaticSendingConfig']) {
-  const configPath = path.join(__dirname, '../data/config.json');
+// Função para enviar mensagem via WhatsApp
+async function sendWhatsAppMessage(phoneNumber: string, message: string, apiConfig: any) {
   try {
-    const configFile = fs.readFileSync(configPath, 'utf8');
-    BaseScheduler.inMemoryStorage['automaticSendingConfig'] = configFile;
+    const payload = {
+      number: phoneNumber,
+      message: message,
+      ...apiConfig
+    };
+
+    const response = await axios.post('https://api.z-api.io/instances/3C6938B52A93B3378D0D5834A44DC873/token/A8B5DF14C35D80D9F9A4967B/send-text', payload);
+    
+    console.log('Mensagem enviada com sucesso:', response.data);
+    return response.data;
   } catch (error) {
-    BaseScheduler.inMemoryStorage['automaticSendingConfig'] = JSON.stringify(defaultConfig);
+    console.error('Erro ao enviar mensagem:', error);
+    throw error;
   }
 }
 
-// Endpoint para teste manual do scheduler
-app.post('/test/check-messages', async (req, res) => {
+// Função para verificar cobranças agendadas
+async function checkScheduledCharges() {
   try {
-    console.log('Recebendo requisição para teste manual do scheduler');
-    await scheduler.testSendMessages();
-    res.json({ message: 'Teste de envio executado com sucesso' });
-  } catch (error) {
-    console.error('Erro no teste:', error);
-    res.status(500).json({ error: 'Erro ao executar teste' });
-  }
-});
+    const today = new Date();
+    console.log('\n=== Verificando cobranças agendadas ===');
+    console.log('Data atual:', today.toLocaleString());
 
-// Endpoint para iniciar o agendamento
-app.post('/scheduler/start', async (req, res) => {
-  try {
-    console.log('Recebendo requisição para iniciar o agendamento');
-    await scheduler.start();
-    res.json({ message: 'Agendamento iniciado com sucesso' });
-  } catch (error) {
-    console.error('Erro ao iniciar agendamento:', error);
-    res.status(500).json({ error: 'Erro ao iniciar agendamento' });
-  }
-});
-
-// Endpoint para parar o agendamento
-app.post('/scheduler/stop', async (req, res) => {
-  try {
-    console.log('Recebendo requisição para parar o agendamento');
-    await scheduler.stop();
-    res.json({ message: 'Agendamento parado com sucesso' });
-  } catch (error) {
-    console.error('Erro ao parar agendamento:', error);
-    res.status(500).json({ error: 'Erro ao parar agendamento' });
-  }
-});
-
-// Endpoint para atualizar configuração
-app.post('/config/update', async (req, res) => {
-  try {
-    console.log('Recebendo requisição para atualizar configuração:', req.body);
-    BaseScheduler.inMemoryStorage['automaticSendingConfig'] = JSON.stringify(req.body);
-    
-    // Salva a configuração em disco também
-    const configPath = path.join(__dirname, '../data/config.json');
-    fs.writeFileSync(configPath, JSON.stringify(req.body, null, 2));
-    
-    await scheduler.start(); // Reinicia o agendamento com a nova configuração
-    res.json({ message: 'Configuração atualizada com sucesso' });
-  } catch (error) {
-    console.error('Erro ao atualizar configuração:', error);
-    res.status(500).json({ error: 'Erro ao atualizar configuração' });
-  }
-});
-
-// Endpoint para atualizar configuração da API
-app.post('/api/config/update', (req, res) => {
-  try {
-    console.log('Recebendo configuração da API:', req.body);
-    BaseScheduler.inMemoryStorage['apiConfig'] = JSON.stringify(req.body);
-    res.json({ message: 'Configuração da API atualizada com sucesso' });
-  } catch (error) {
-    console.error('Erro ao atualizar configuração da API:', error);
-    res.status(500).json({ error: 'Erro ao atualizar configuração da API' });
-  }
-});
-
-// Endpoint para recuperar configuração da API
-app.get('/api/config', (req, res) => {
-  try {
-    console.log('Recebendo requisição para recuperar configuração da API');
-    const apiConfig = BaseScheduler.inMemoryStorage['apiConfig'];
-    res.json(apiConfig ? JSON.parse(apiConfig) : null);
-  } catch (error) {
-    console.error('Erro ao recuperar configuração da API:', error);
-    res.status(500).json({ error: 'Erro ao recuperar configuração da API' });
-  }
-});
-
-// Endpoint para recuperar clientes
-app.get('/clients', (req, res) => {
-  try {
-    console.log('Recebendo requisição para recuperar clientes');
-    const clients = BaseScheduler.inMemoryStorage['clients'];
-    res.json(clients ? JSON.parse(clients) : []);
-  } catch (error) {
-    console.error('Erro ao recuperar clientes:', error);
-    res.status(500).json({ error: 'Erro ao recuperar clientes' });
-  }
-});
-
-// Endpoint para atualizar lista de clientes
-app.post('/clients/update', (req, res) => {
-  try {
-    console.log('Recebendo atualização de clientes:', req.body);
-    // Remove lastBillingDate para teste
-    const clients = req.body.map((client: any) => {
-      const { lastBillingDate, ...rest } = client;
-      return rest;
+    // Busca configurações
+    const configs = await Config.findAll();
+    const configObject: { [key: string]: string } = {};
+    configs.forEach(c => {
+      configObject[c.key] = c.value;
     });
-    BaseScheduler.inMemoryStorage['clients'] = JSON.stringify(clients);
-    res.json({ message: 'Lista de clientes atualizada com sucesso' });
+    
+    console.log('Configurações:', configObject);
+
+    // Verifica se o envio automático está ativado
+    if (configObject.automaticSendingEnabled !== 'true') {
+      console.log('Envio automático desativado');
+      return;
+    }
+
+    // Verifica se é hora de enviar
+    const sendTime = configObject.sendTime || '09:00';
+    const [sendHour, sendMinute] = sendTime.split(':').map(Number);
+    const currentHour = today.getHours();
+    const currentMinute = today.getMinutes();
+
+    console.log('Horário configurado:', sendHour + ':' + sendMinute);
+    console.log('Horário atual:', currentHour + ':' + currentMinute);
+
+    if (currentHour !== sendHour || currentMinute !== sendMinute) {
+      console.log('Fora do horário de envio');
+      return;
+    }
+
+    // Busca cobranças
+    const charges = await Charge.findAll();
+    console.log('Total de cobranças:', charges.length);
+
+    // Dias antes do vencimento
+    const daysBeforeDue = parseInt(configObject.daysBeforeDue || '1');
+    console.log('Dias antes do vencimento:', daysBeforeDue);
+
+    for (const charge of charges) {
+      console.log('\nVerificando cobrança:', charge.name);
+
+      // Calcula a data do próximo vencimento
+      const nextDueDate = new Date();
+      nextDueDate.setDate(charge.billingDay);
+      if (nextDueDate < today) {
+        nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+      }
+
+      // Calcula a data de envio (dias antes do vencimento)
+      const sendDate = new Date(nextDueDate);
+      sendDate.setDate(sendDate.getDate() - daysBeforeDue);
+
+      console.log('Data de vencimento:', nextDueDate.toLocaleDateString());
+      console.log('Data de envio:', sendDate.toLocaleDateString());
+      console.log('Data atual:', today.toLocaleDateString());
+
+      // Verifica se é dia de enviar
+      if (
+        sendDate.getDate() === today.getDate() &&
+        sendDate.getMonth() === today.getMonth() &&
+        sendDate.getFullYear() === today.getFullYear()
+      ) {
+        console.log('É dia de enviar cobrança');
+
+        // Verifica se já foi enviado hoje
+        const lastBillingDate = charge.lastBillingDate ? new Date(charge.lastBillingDate) : null;
+        if (!lastBillingDate || lastBillingDate.toLocaleDateString() !== today.toLocaleDateString()) {
+          try {
+            // Formata a mensagem
+            const messageTemplate = configObject.messageTemplate || '';
+            const formattedValue = Number(charge.value).toFixed(2);
+            const message = messageTemplate
+              .replace(/{nome}/g, charge.name)
+              .replace(/{servico}/g, charge.service)
+              .replace(/{valor}/g, formattedValue)
+              .replace(/{dias}/g, charge.billingDay.toString());
+
+            console.log('Mensagem formatada:', message);
+
+            // Envia a mensagem
+            await sendWhatsAppMessage(
+              charge.whatsapp.replace(/\D/g, ''),
+              message,
+              configObject
+            );
+
+            // Atualiza a data do último envio
+            await charge.update({
+              lastBillingDate: today.toISOString().split('T')[0]
+            });
+
+            console.log('Cobrança enviada com sucesso');
+          } catch (error) {
+            console.error('Erro ao enviar cobrança:', error);
+          }
+        } else {
+          console.log('Já foi enviado hoje');
+        }
+      } else {
+        console.log('Não é dia de enviar');
+      }
+    }
   } catch (error) {
-    console.error('Erro ao atualizar lista de clientes:', error);
-    res.status(500).json({ error: 'Erro ao atualizar lista de clientes' });
+    console.error('Erro ao verificar cobranças agendadas:', error);
+  }
+}
+
+// Agenda a verificação para rodar a cada minuto
+cron.schedule('* * * * *', () => {
+  console.log('\n=== Iniciando verificação agendada ===');
+  checkScheduledCharges();
+});
+
+// Rota raiz
+app.get('/', (req, res) => {
+  res.json({ message: 'API do Sistema de Cobranças está funcionando!' });
+});
+
+// Rotas de Configuração
+app.get('/config', async (req, res) => {
+  try {
+    const configs = await Config.findAll();
+    const configObject: { [key: string]: any } = {};
+    configs.forEach((config) => {
+      configObject[config.key] = config.value;
+    });
+    res.json(configObject);
+  } catch (error) {
+    console.error('Erro ao buscar configurações:', error);
+    res.status(500).json({ error: 'Erro ao buscar configurações' });
   }
 });
 
-// Se o script foi executado com a flag --check-messages
-if (process.argv.includes('--check-messages')) {
-  console.log('Executando verificação agendada de mensagens...');
-  console.log('Argumentos:', process.argv);
-  console.log('Diretório atual:', process.cwd());
-  
-  // Carrega as configurações iniciais
-  const defaultConfig = {
-    enabled: true,
-    daysBeforeDue: "1",
-    sendTime: "13:27",
-    messageTemplate: "Olá {nome}! 👋\n\nEsperamos que esteja bem!\n\n📋 *Detalhes do Serviço*\n○ Serviço: {servico}\n○ Valor: R$ {valor}\n○ Vencimento: {dias}\n\n💳 *Opções de Pagamento*\nPara sua comodidade, disponibilizamos o pagamento via PIX:"
-  };
-
+app.post('/config', async (req, res) => {
   try {
-    // Carrega os clientes do arquivo
-    const clientsPath = require('path').resolve(__dirname, '../data/clients.json');
-    const clientsData = require('fs').readFileSync(clientsPath, 'utf8');
-    const clients = JSON.parse(clientsData);
-    console.log('Clientes carregados:', clients);
-    BaseScheduler.inMemoryStorage['clients'] = JSON.stringify(clients);
-
-    // Carrega a configuração da API
-    const apiConfigPath = require('path').resolve(__dirname, '../data/api_config.json');
-    const apiConfigData = require('fs').readFileSync(apiConfigPath, 'utf8');
-    const apiConfig = JSON.parse(apiConfigData);
-    console.log('Configuração da API carregada:', apiConfig);
-    BaseScheduler.inMemoryStorage['apiConfig'] = JSON.stringify(apiConfig);
+    const configData = req.body;
+    
+    // Converte o objeto de configuração em registros individuais
+    for (const [key, value] of Object.entries(configData)) {
+      await Config.upsert({
+        key,
+        value: typeof value === 'string' ? value : JSON.stringify(value)
+      });
+    }
+    
+    res.status(200).json({ message: 'Configurações salvas com sucesso' });
   } catch (error) {
-    console.error('Erro ao carregar dados:', error);
+    console.error('Erro ao salvar configuração:', error);
+    res.status(500).json({ error: 'Erro ao salvar configuração' });
   }
+});
 
-  if (!BaseScheduler.inMemoryStorage['automaticSendingConfig']) {
-    BaseScheduler.inMemoryStorage['automaticSendingConfig'] = JSON.stringify(defaultConfig);
+// Rotas de Cobranças
+app.get('/charges', async (req, res) => {
+  try {
+    const charges = await Charge.findAll();
+    res.json(charges);
+  } catch (error) {
+    console.error('Erro ao buscar cobranças:', error);
+    res.status(500).json({ error: 'Erro ao buscar cobranças' });
   }
-  
-  // Teste manual do cálculo de dias
-  const client = JSON.parse(BaseScheduler.inMemoryStorage['clients'])[0];
-  const today = new Date();
-  const billingDay = client.billingDay;
-  let nextBillingDate = new Date(today.getFullYear(), today.getMonth(), billingDay);
-  if (today.getDate() >= billingDay) {
-    nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+});
+
+app.post('/charges', async (req, res) => {
+  try {
+    console.log('Recebendo requisição POST /charges:', req.body);
+
+    // Se for um array, cria/atualiza múltiplas cobranças
+    if (Array.isArray(req.body)) {
+      const charges = await Promise.all(
+        req.body.map(async (charge) => {
+          try {
+            if (!charge.id) {
+              console.error('Erro: ID não fornecido para a cobrança:', charge);
+              return null;
+            }
+
+            // Converte o valor para número
+            const value = typeof charge.value === 'string' 
+              ? parseFloat(charge.value) 
+              : charge.value;
+
+            // Converte o billingDay para número
+            const billingDay = typeof charge.billingDay === 'string'
+              ? parseInt(charge.billingDay)
+              : charge.billingDay;
+
+            const [updatedCharge, created] = await Charge.upsert({
+              id: charge.id,
+              name: charge.name,
+              whatsapp: charge.whatsapp,
+              service: charge.service,
+              value: value,
+              billingDay: billingDay,
+              recurrence: charge.recurrence,
+              lastBillingDate: charge.lastBillingDate
+            });
+
+            console.log(
+              created ? 'Cobrança criada:' : 'Cobrança atualizada:',
+              updatedCharge.toJSON()
+            );
+
+            return updatedCharge;
+          } catch (error) {
+            console.error('Erro ao processar cobrança:', charge, error);
+            return null;
+          }
+        })
+      );
+
+      // Remove os nulls do array
+      const validCharges = charges.filter(charge => charge !== null);
+      console.log('Cobranças processadas:', validCharges);
+
+      res.status(201).json(validCharges);
+    } 
+    // Se for um objeto único, cria/atualiza uma única cobrança
+    else {
+      const charge = req.body;
+      
+      if (!charge.id) {
+        throw new Error('ID não fornecido para a cobrança');
+      }
+
+      // Converte o valor para número
+      const value = typeof charge.value === 'string' 
+        ? parseFloat(charge.value) 
+        : charge.value;
+
+      // Converte o billingDay para número
+      const billingDay = typeof charge.billingDay === 'string'
+        ? parseInt(charge.billingDay)
+        : charge.billingDay;
+
+      const [updatedCharge, created] = await Charge.upsert({
+        id: charge.id,
+        name: charge.name,
+        whatsapp: charge.whatsapp,
+        service: charge.service,
+        value: value,
+        billingDay: billingDay,
+        recurrence: charge.recurrence,
+        lastBillingDate: charge.lastBillingDate
+      });
+
+      console.log(
+        created ? 'Cobrança criada:' : 'Cobrança atualizada:',
+        updatedCharge.toJSON()
+      );
+
+      res.status(created ? 201 : 200).json(updatedCharge);
+    }
+  } catch (error) {
+    console.error('Erro ao criar/atualizar cobrança:', error);
+    res.status(500).json({ error: 'Erro ao criar/atualizar cobrança' });
   }
-  const daysUntilDue = Math.ceil((nextBillingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  
-  console.log('\nTeste manual de datas:');
-  console.log('Data atual:', today.toISOString());
-  console.log('Dia de vencimento:', billingDay);
-  console.log('Próximo vencimento:', nextBillingDate.toISOString());
-  console.log('Dias até o vencimento:', daysUntilDue);
-  console.log('Deve notificar?', daysUntilDue === 1);
-  
-  // Executa o teste
-  scheduler.testSendMessages().then(() => {
-    console.log('Verificação concluída com sucesso');
-    process.exit(0);
-  }).catch(error => {
-    console.error('Erro ao executar verificação:', error);
+});
+
+app.put('/charges/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const [updated] = await Charge.update(req.body, {
+      where: { id }
+    });
+    if (updated) {
+      const updatedCharge = await Charge.findByPk(id);
+      res.json(updatedCharge);
+    } else {
+      res.status(404).json({ error: 'Cobrança não encontrada' });
+    }
+  } catch (error) {
+    console.error('Erro ao atualizar cobrança:', error);
+    res.status(500).json({ error: 'Erro ao atualizar cobrança' });
+  }
+});
+
+app.delete('/charges/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await Charge.destroy({
+      where: { id }
+    });
+    if (deleted) {
+      res.status(204).send();
+    } else {
+      res.status(404).json({ error: 'Cobrança não encontrada' });
+    }
+  } catch (error) {
+    console.error('Erro ao excluir cobrança:', error);
+    res.status(500).json({ error: 'Erro ao excluir cobrança' });
+  }
+});
+
+// Inicializa o banco de dados e inicia o servidor
+initializeDatabase()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Servidor rodando na porta ${PORT}`);
+      // Executa a verificação de cobranças assim que o servidor iniciar
+      checkScheduledCharges();
+    });
+  })
+  .catch((error) => {
+    console.error('Erro ao inicializar o servidor:', error);
     process.exit(1);
   });
-} else {
-  // Inicia o servidor normalmente
-  app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
-  });
-}
