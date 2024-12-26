@@ -7,30 +7,66 @@ Argumentos: [
 Diretório atual: C:\Users\BARBO\Downloads\Cobrancas\cobrancas-server
 Clientes carregados: [
   {
-    id: '1734189772123',
-    name: 'Anderson Silva',
-    whatsapp: '5583994094835',
-    service: 'Manutenção de site',
-    value: 80,
-    billingDay: 15,
-    recurrence: 'monthly'
-  },
-  {
-    id: '1734193560317',
+    id: '1734355336018',
     name: 'Anderson Barbosa',
     whatsapp: '5583994094835',
     service: 'Manutenção de site',
     value: 100,
-    billingDay: 16,
+    billingDay: '20',
     recurrence: 'monthly'
   },
   {
-    id: '1734193560318',
-    name: 'Alan',
-    whatsapp: '5583994094835',
+    id: '1734358581183',
+    name: 'Karísia Lima',
+    whatsapp: '5585996517250',
     service: 'Manutenção de site',
     value: 100,
-    billingDay: 14,
+    billingDay: 10,
+    recurrence: 'monthly'
+  },
+  {
+    id: '1734358639281',
+    name: 'Luana - Rafante & Ferreira',
+    whatsapp: '5535998655419',
+    service: 'Manutenção de site',
+    value: 60,
+    billingDay: 10,
+    recurrence: 'monthly'
+  },
+  {
+    id: '1734358746353',
+    name: "Juarez - Juara's Burger",
+    whatsapp: '5583994087019',
+    service: 'Sistema de Delivery',
+    value: 50,
+    billingDay: 10,
+    recurrence: 'monthly'
+  },
+  {
+    id: '1734358828828',
+    name: 'Pedro Andrade - Quintto',
+    whatsapp: '5585999600248',
+    service: 'Manutenção de site',
+    value: 100,
+    billingDay: 10,
+    recurrence: 'monthly'
+  },
+  {
+    id: '1734358895746',
+    name: 'Juliana Soares',
+    whatsapp: '5583987181686',
+    service: 'Manutenção de site',
+    value: 100,
+    billingDay: 1,
+    recurrence: 'monthly'
+  },
+  {
+    id: '1734359169418',
+    name: 'Claudia Boleria',
+    whatsapp: '5583993657673',
+    service: 'Dinheiro emprestado a juros',
+    value: 90,
+    billingDay: 5,
     recurrence: 'monthly'
   }
 ]
@@ -46,17 +82,38 @@ Configuração da API carregada: {
 }
 
 Teste manual de datas:
-Data atual: 2024-12-14T17:18:19.535Z
-Dia de vencimento: 15
-Próximo vencimento: 2024-12-15T03:00:00.000Z
-Dias até o vencimento: 1
-Deve notificar? true
+Data atual: 2024-12-24T12:01:47.618Z
+Dia de vencimento: 20
+Próximo vencimento: 2025-01-20T03:00:00.000Z
+Dias até o vencimento: 27
+Deve notificar? false
 
 === Iniciando verificação de mensagens ===
 Configuração atual: {
   enabled: true,
   daysBeforeDue: '1',
-  messageTemplate: 'Olá {nome}! Lembrete de pagamento: R$ {valor} referente ao serviço de {servico}. Vencimento em {dias} dias.'
+  sendTime: '09:00',
+  messageTemplate: 'Olá {nome}! 👋\n' +
+    '\n' +
+    'Esperamos que esteja bem!\n' +
+    'Estou enviando este lembrete referente à sua assinatura/contratação recorrente do serviço abaixo:\n' +
+    '\n' +
+    '📋 *Detalhes do serviço contrado*\n' +
+    '○ Serviço: {servico}\n' +
+    '○ Valor: R$ {valor}\n' +
+    '○ Vencimento: {dias}\n' +
+    '\n' +
+    '*⚠️ Importante:*\n' +
+    'Evite atrasos para continuar aproveitando nossos serviços sem interrupções!\n' +
+    'Qualquer dúvida, estamos à disposição! 😊\n' +
+    '\n' +
+    'Agradecemos a preferência e confiança em nossos serviços! 🙏\n' +
+    '\n' +
+    'Att.\n' +
+    'Anderson Barbosa\n' +
+    '\n' +
+    '💳 *Pagamento*\n' +
+    'Para sua comodidade, disponibilizamos o pagamento via PIX:'
 }
 API Config: {
   apiUrl: 'https://evolution.abdesignerpro.com.br',
@@ -69,91 +126,95 @@ API Config: {
   pixKeyType: 'cpf'
 }
 
-Total de clientes: 3
-Data atual: 2024-12-14T17:18:19.537Z
+Total de clientes: 7
+Data atual: 2024-12-24T12:01:47.622Z
 Dias antes do vencimento: 1
 
-Verificando cliente Anderson Silva:
-Data atual (raw): 2024-12-14T17:18:19.537Z
-Data atual (ajustada): 2024-12-14T03:00:00.000Z
-Dia atual: 14
-Dia de vencimento: 15
-Próximo vencimento: 2024-12-15T03:00:00.000Z
-Dias até o vencimento: 1
-Dias configurados para notificar antes: 1
-Deve notificar? true
-Motivo: Faltam exatamente 1 dias para o vencimento
-
-Cliente que será notificado: Anderson Silva
-Dia de cobrança: 15
-Recorrência: monthly
-Última cobrança: undefined
-
 Verificando cliente Anderson Barbosa:
-Data atual (raw): 2024-12-14T17:18:19.538Z
-Data atual (ajustada): 2024-12-14T03:00:00.000Z
-Dia atual: 14
-Dia de vencimento: 16
-Próximo vencimento: 2024-12-16T03:00:00.000Z
-Dias até o vencimento: 2
+Data atual (raw): 2024-12-24T12:01:47.622Z
+Data atual (ajustada): 2024-12-24T03:00:00.000Z
+Dia atual: 24
+Dia de vencimento: 20
+Envio automático ativado: true
+Próximo vencimento: 2025-01-20T03:00:00.000Z
+Dias até o vencimento: 27
 Dias configurados para notificar antes: 1
 Deve notificar? false
 Motivo: Não é o dia do vencimento nem faltam 1 dias para o vencimento
 
-Verificando cliente Alan:
-Data atual (raw): 2024-12-14T17:18:19.538Z
-Data atual (ajustada): 2024-12-14T03:00:00.000Z
-Dia atual: 14
-Dia de vencimento: 14
-É o dia do vencimento!
+Verificando cliente Karísia Lima:
+Data atual (raw): 2024-12-24T12:01:47.623Z
+Data atual (ajustada): 2024-12-24T03:00:00.000Z
+Dia atual: 24
+Dia de vencimento: 10
+Envio automático ativado: true
+Próximo vencimento: 2025-01-10T03:00:00.000Z
+Dias até o vencimento: 17
+Dias configurados para notificar antes: 1
+Deve notificar? false
+Motivo: Não é o dia do vencimento nem faltam 1 dias para o vencimento
 
-Cliente que será notificado: Alan
-Dia de cobrança: 14
-Recorrência: monthly
-Última cobrança: undefined
-Clientes filtrados para notificação: [
-  {
-    id: '1734189772123',
-    name: 'Anderson Silva',
-    whatsapp: '5583994094835',
-    service: 'Manutenção de site',
-    value: 80,
-    billingDay: 15,
-    recurrence: 'monthly'
-  },
-  {
-    id: '1734193560318',
-    name: 'Alan',
-    whatsapp: '5583994094835',
-    service: 'Manutenção de site',
-    value: 100,
-    billingDay: 14,
-    recurrence: 'monthly'
-  }
-]
+Verificando cliente Luana - Rafante & Ferreira:
+Data atual (raw): 2024-12-24T12:01:47.623Z
+Data atual (ajustada): 2024-12-24T03:00:00.000Z
+Dia atual: 24
+Dia de vencimento: 10
+Envio automático ativado: true
+Próximo vencimento: 2025-01-10T03:00:00.000Z
+Dias até o vencimento: 17
+Dias configurados para notificar antes: 1
+Deve notificar? false
+Motivo: Não é o dia do vencimento nem faltam 1 dias para o vencimento
 
-Clientes para notificar: [
-  {
-    id: '1734189772123',
-    name: 'Anderson Silva',
-    whatsapp: '5583994094835',
-    service: 'Manutenção de site',
-    value: 80,
-    billingDay: 15,
-    recurrence: 'monthly'
-  },
-  {
-    id: '1734193560318',
-    name: 'Alan',
-    whatsapp: '5583994094835',
-    service: 'Manutenção de site',
-    value: 100,
-    billingDay: 14,
-    recurrence: 'monthly'
-  }
-]
+Verificando cliente Juarez - Juara's Burger:
+Data atual (raw): 2024-12-24T12:01:47.623Z
+Data atual (ajustada): 2024-12-24T03:00:00.000Z
+Dia atual: 24
+Dia de vencimento: 10
+Envio automático ativado: true
+Próximo vencimento: 2025-01-10T03:00:00.000Z
+Dias até o vencimento: 17
+Dias configurados para notificar antes: 1
+Deve notificar? false
+Motivo: Não é o dia do vencimento nem faltam 1 dias para o vencimento
 
-=== Mensagem enviada com sucesso para Anderson Silva ===
+Verificando cliente Pedro Andrade - Quintto:
+Data atual (raw): 2024-12-24T12:01:47.624Z
+Data atual (ajustada): 2024-12-24T03:00:00.000Z
+Dia atual: 24
+Dia de vencimento: 10
+Envio automático ativado: true
+Próximo vencimento: 2025-01-10T03:00:00.000Z
+Dias até o vencimento: 17
+Dias configurados para notificar antes: 1
+Deve notificar? false
+Motivo: Não é o dia do vencimento nem faltam 1 dias para o vencimento
 
-=== Mensagem enviada com sucesso para Alan ===
+Verificando cliente Juliana Soares:
+Data atual (raw): 2024-12-24T12:01:47.624Z
+Data atual (ajustada): 2024-12-24T03:00:00.000Z
+Dia atual: 24
+Dia de vencimento: 1
+Envio automático ativado: true
+Próximo vencimento: 2025-01-01T03:00:00.000Z
+Dias até o vencimento: 8
+Dias configurados para notificar antes: 1
+Deve notificar? false
+Motivo: Não é o dia do vencimento nem faltam 1 dias para o vencimento
+
+Verificando cliente Claudia Boleria:
+Data atual (raw): 2024-12-24T12:01:47.624Z
+Data atual (ajustada): 2024-12-24T03:00:00.000Z
+Dia atual: 24
+Dia de vencimento: 5
+Envio automático ativado: true
+Próximo vencimento: 2025-01-05T03:00:00.000Z
+Dias até o vencimento: 12
+Dias configurados para notificar antes: 1
+Deve notificar? false
+Motivo: Não é o dia do vencimento nem faltam 1 dias para o vencimento
+Clientes filtrados para notificação: []
+
+Clientes para notificar: []
+Nenhum cliente para notificar hoje.
 Verificação concluída com sucesso
